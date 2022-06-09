@@ -20,7 +20,6 @@ class TrainDeploy(L.LightningFlow):
         )
 
         self.serve_work = TextServeGradio(cloud_compute=L.CloudCompute("cpu", 1))
-        self.serve_work.private_ai_synthetic_data = L.storage.Payload(self.private_ai_synthetic_data.run)
 
     def run(self):
 
