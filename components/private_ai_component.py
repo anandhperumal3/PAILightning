@@ -1,13 +1,18 @@
-from subprocess import Popen
-import json
 import time
+from subprocess import Popen
+import json, os
+from pathlib import Path
 import lightning as L
 import requests
 from datasets import load_dataset
 
+
 class PrivateAISyntheticData(L.LightningWork):
 
-    def __init__(self, key, mode, text_feature, url):
+    LOCAL_STORE_DIR = Path(os.path.join(Path.cwd(), ".lightning-store"))
+    if not Path.exists(LOCAL_STORE_DIR):
+        Path.mkdir(LOCAL_STORE_DIR)
+    def __init__(self, key, mode, text_feature, output_path, host, port):
         """
         Private-AI Data Module, for synthetic data generation
         :param key: PAI customer Key
@@ -16,19 +21,29 @@ class PrivateAISyntheticData(L.LightningWork):
         :param url: docker url
 
         """
-        super().__init__()
+        super().__init__(host=host, port=port)
         self.key = key
         self.mode = mode
         self.text_feature = text_feature
-        self.url = url
-        self.output_path = None
-        self.start_server()
+        self.url = None
+        self.server_started = False
+        self.output_path = str(Path(
+            os.path.join(
+                self.LOCAL_STORE_DIR,
+                output_path,
+            )
+        ))
 
-    def start_server(self):
+    def start_server(self, host, port):
         # start docker
-        cmd = "docker run --rm -p 8080:8080 deid:2.11full"
+        cmd = f"docker run --rm -p {port}:{port} deid:2.11full"
+        if not self.url:
+            self.url = f"http://{host}:{port}/deidentify_text"
+
         Popen(cmd.split(" "))
         time.sleep(600)
+
+        return
 
     def pai_docker_call(self, text) -> str:
         """
@@ -58,18 +73,18 @@ class PrivateAISyntheticData(L.LightningWork):
         example[text_feature_name] = self.pai_docker_call(example[text_feature_name])
         return example
 
-    def run(self, input_text_or_path: str, action: str = 'individual', output_path: str = None):
-        print(action)
-
+    def run(self, input_text_or_path: str, action: str = 'individual'):
+        if not self.server_started:
+            self.start_server(self.host, self.port)
+            self.server_started = True
         if action == 'batch':
-            assert output_path, "output directory parameter is requried in-order to save the csv"
             synthetic_data = load_dataset('csv', data_files=input_text_or_path)
             synthetic_data = synthetic_data.map(lambda e: self.synthetic_text(e, self.text_feature))
-            synthetic_data['train'].to_csv(output_path)
-            self.output_path = output_path
+            if not os.path.exists(os.path.dirname(self.output_path)):
+                os.mkdir(os.path.dirname(self.output_path))
+            synthetic_data['train'].to_csv(self.output_path)
+            self.output_path =  L.storage.Payload(self.output_path)
         else:
-            print(action)
             synthetic_data = self.synthetic_text({'text': input_text_or_path}, self.text_feature)
-            print(synthetic_data)
-            return synthetic_data
+            return synthetic_data['text']
         return None
