@@ -34,14 +34,11 @@ class PrivateAISynthetic(pl.LightningDataModule):
         :param cache: whether datasets needs to be cache in a local dir
         """
         super().__init__()
-        self.val_dataset = None
+
         self.tokenizer = AutoTokenizer.from_pretrained('distilroberta-base')
-        self.key = 'XXX'
         self.split_size = 0.2 #split_size
         self.save_cache_dataset_dir = './output_dir' #save_dataset_dir
         self.batch_size = 32
-        self.test_dataset=None
-        self.predict_dataset=None
         self.padding = 'max_length'
         self.truncation = True
         self.batched = True
