@@ -34,7 +34,7 @@ class TextServeGradio(ServeGradio):
 
         payload = json.dumps({
             "text": text,
-            "key": "INTERNAL_TESTING_UNLIMITED_REALLY",
+            "key": "XXX",
             "fake_entity_accuracy_mode": "standard"
         })
         headers = {
