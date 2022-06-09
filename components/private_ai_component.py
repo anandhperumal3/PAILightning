@@ -40,8 +40,8 @@ class PrivateAISyntheticData(L.LightningWork):
         if not self.url:
             self.url = f"http://{host}:{port}/deidentify_text"
 
-        Popen(cmd.split(" "))
-        time.sleep(600)
+        # Popen(cmd.split(" "))
+        # time.sleep(600)
 
         return
 
