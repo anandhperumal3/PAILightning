@@ -22,12 +22,13 @@ class PrivateAISyntheticData(L.LightningWork):
         self.text_feature = text_feature
         self.url = url
         self.output_path = None
+        self.start_server()
 
     def start_server(self):
         # start docker
         cmd = "docker run --rm -p 8080:8080 deid:2.11full"
         Popen(cmd.split(" "))
-        time.sleep(900)
+        time.sleep(600)
 
     def pai_docker_call(self, text) -> str:
         """
