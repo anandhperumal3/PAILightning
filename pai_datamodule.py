@@ -13,8 +13,8 @@ from datasets import load_dataset
 from transformers import AutoTokenizer
 
 
-class PAIDataModule(pl.LightningDataModule):
-    def __init__(self):
+class PrivateAISynthetic(pl.LightningDataModule):
+    def __init__(self, data_file, text_feature_name):
         """
         Private-AI Data Module, for synthetic data generation
         :param tokenizer: HuggingFace tokenizer
@@ -47,43 +47,9 @@ class PAIDataModule(pl.LightningDataModule):
         self.batched = True
         self.data_synthetic = False
         self.cache = False
+        self.data_file = data_file
+        self.text_feature_name = text_feature_name
 
-    @staticmethod
-    def pai_docker_call(text) -> str:
-        """
-        This function makes a call to the PAI docker for the synthetic text generation.
-        :param text: input text
-        :return: synthetic text
-        """
-        payload = json.dumps({
-            "text": text,
-            "key": 'INTERNAL_TESTING_UNLIMITED_REALLY',
-            "fake_entity_accuracy_mode": 'standard'
-        })
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("POST", "http://localhost:8080/deidentify_text", headers=headers, data=payload)
-        fake_text = response.json()["result_fake"]
-        return fake_text
-
-    @staticmethod
-    def synthetic_text(example, text_feature_name) -> object:
-        """
-        This function modifies the text in the example with synthetic text.
-        :param example: example containing the text column as a field
-        :param text_feature_name: text feature name
-        :return: example containing the synthetic text in the text feature field
-        """
-        example[text_feature_name] = PAIDataModule.pai_docker_call(example[text_feature_name])
-        return example
-
-    def tokenize_pseudonymize(self,dataset, text_feature_name):
-        dataset = dataset.map(lambda e: PAIDataModule.synthetic_text(e, text_feature_name))
-        dataset = dataset.map(
-            lambda e: self.tokenizer(e[text_feature_name], truncation=self.truncation, padding=self.padding),
-            batched=self.batched)
-        return dataset
 
     def prepare_data(self) -> None:
         """
@@ -95,24 +61,32 @@ class PAIDataModule(pl.LightningDataModule):
         :return: None
         """
 
-        dataset = load_dataset('poem_sentiment')
-        self.test_dataset = dataset['test']
+        dataset = load_dataset('csv',data_files=self.data_file)
         self.train_dataset = dataset['train']
-        self.val_dataset = dataset['validation']
-        self.text_features = ['verse_text']
+        if 'test' in dataset:
+            self.test_dataset = dataset['test']
+        if 'validation' in dataset:
+            self.val_dataset = dataset['validation']
 
-        for text_feature_name in self.text_features:
 
-            self.train_dataset = self.tokenize_pseudonymize(self.train_dataset, text_feature_name)
-            # print(self.train_dataset)
-            if self.val_dataset:
-                self.val_dataset = self.tokenize_pseudonymize(self.val_dataset, text_feature_name)
-            if self.test_dataset:
-                self.test_dataset = self.tokenize_pseudonymize(self.test_dataset, text_feature_name)
-            if self.predict_dataset:
-                self.predict_dataset = self.predict_dataset(self.predict_dataset, text_feature_name)
+        self.train_dataset = self.train_dataset.map(
+        lambda e: self.tokenizer(e[self.text_feature_name], truncation=self.truncation, padding=self.padding),
+        batched=self.batched)
 
-        self.data_synthetic = True
+        if self.val_dataset:
+            self.val_dataset = self.val_dataset.map(
+                                lambda e: self.tokenizer(e[self.text_feature_name], truncation=self.truncation, padding=self.padding),
+                                batched=self.batched)
+        if self.test_dataset:
+            self.test_dataset = self.test_dataset.map(
+                                    lambda e: self.tokenizer(e[self.text_feature_name], truncation=self.truncation, padding=self.padding),
+                                    batched=self.batched)
+        if self.predict_dataset:
+            self.predict_dataset = self.predict_dataset.map(
+                                    lambda e: self.tokenizer(e[self.text_feature_name], truncation=self.truncation, padding=self.padding),
+                                    batched=self.batched)
+
+
         if self.cache:
             self.save_cache_dataset_dir = self.save_cache_dataset_dir if self.save_cache_dataset_dir else './'
             self.train_dataset.save_to_disk(f"{self.save_cache_dataset_dir}/train_dataset")
@@ -126,7 +100,7 @@ class PAIDataModule(pl.LightningDataModule):
         Assigning the train/val/test/predict split
         :param stage: it defines which setup logic for which split needs to defined.
         """
-        self.prepare_data()
+        # self.prepare_data()
         if self.cache:
             self.save_cache_dataset_dir = self.save_cache_dataset_dir if self.save_cache_dataset_dir else './'
 
