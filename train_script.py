@@ -2,16 +2,17 @@ from transformers import AutoModelForSequenceClassification
 from pytorch_lightning import LightningModule
 from pytorch_lightning.utilities.cli import LightningCLI
 from torchmetrics import Accuracy
-from pai_datamodule import PAIDataModule
+from pai_datamodule import PrivateAISynthetic
 import torch
 class SequenceClassification(LightningModule):
-    def __init__(self, model=None):
+    def __init__(self, model=None, data_file=None):
         super().__init__()
         self.save_hyperparameters(ignore="model")
-        self.model = model or AutoModelForSequenceClassification.from_pretrained("distilroberta-base", num_labels=4)
+        self.model = model or AutoModelForSequenceClassification.from_pretrained("distilroberta-base", num_labels=5)
         self.loss_function = torch.nn.CrossEntropyLoss()
         self.val_acc = Accuracy()
         self.lr = 0.001
+        self.data_file = data_file
 
     def save_pretrained(self, model_output_dir):
         torch.save(self.model, model_output_dir)
@@ -39,6 +40,6 @@ class SequenceClassification(LightningModule):
 
 if __name__ == "__main__":
     cli = LightningCLI(
-        SequenceClassification, PAIDataModule, seed_everything_default=42, save_config_overwrite=True, run=False
+        SequenceClassification, PrivateAISynthetic, seed_everything_default=42, save_config_overwrite=True, run=False
     )
     cli.trainer.fit(cli.model, datamodule=cli.datamodule)

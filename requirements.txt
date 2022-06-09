@@ -1,4 +1,4 @@
-transformers==4.16.2
+torchvision==0.10.0
 pytorch-lightning==1.6.3
 jsonargparse[signatures]==4.7.3
 wandb==0.12.16

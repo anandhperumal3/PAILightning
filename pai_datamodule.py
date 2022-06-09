@@ -17,8 +17,21 @@ class PrivateAISynthetic(pl.LightningDataModule):
     def __init__(self, data_file, text_feature_name):
         """
         Private-AI Data Module, for synthetic data generation
+        :param tokenizer: HuggingFace tokenizer
+        :param key: PAI customer Key
         :param text_features: list of text feature names in the dataset that needs a synthetic data generation
-        :param data_file: path for input data file
+        :param train_dataset: training dataset
+        :param test_dataset: test dataset
+        :param predict_dataset: predict dataset
+        :param split_size: split size for train/val
+        :param mode: synthetic data generation model type
+        :param save_dataset_dir: path saving cache
+        :param truncation: truncation strategy for tokenization
+        :param padding: padding strategy
+        :param batched: if it needs to be batched
+        :param batch_size: batch size
+        :param url: docker url
+        :param cache: whether datasets needs to be cache in a local dir
         """
         super().__init__()
         self.val_dataset = None
