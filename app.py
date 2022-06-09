@@ -8,7 +8,7 @@ class TrainDeploy(L.LightningFlow):
         self.input_path = "./datasets/test2.csv"
         self.output_path = "./datasets/test2_pai_output.csv"
         self.url = "http://localhost:8080/deidentify_text"
-        self.key = "INTERNAL_TESTING_UNLIMITED_REALLY"
+        self.key = "XXX"
         self.mode = "standard"
         self.private_ai_synthetic_data = PrivateAISyntheticData(key=self.key, mode=self.mode
                                                                 , text_feature="text",
