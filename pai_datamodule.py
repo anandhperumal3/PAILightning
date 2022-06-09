@@ -46,6 +46,9 @@ class PrivateAISynthetic(pl.LightningDataModule):
         self.cache = False
         self.data_file = data_file
         self.text_feature_name = text_feature_name
+        self.val_dataset = None
+        self.predict_dataset = None
+        self.test_dataset = None
 
 
     def prepare_data(self) -> None:
