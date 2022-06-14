@@ -2,8 +2,11 @@ from transformers import AutoModelForSequenceClassification
 from pytorch_lightning import LightningModule
 from pytorch_lightning.utilities.cli import LightningCLI
 from torchmetrics import Accuracy
-from pai_datamodule import PrivateAISynthetic
 import torch
+
+from pai_datamodule import PrivateAISynthetic
+
+
 class SequenceClassification(LightningModule):
     def __init__(self, model=None, data_file=None):
         super().__init__()
@@ -21,14 +24,14 @@ class SequenceClassification(LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        input_ids, attention_mask, labels = batch
+        input_ids, _, labels = batch
         output = self.forward(input_ids)
         loss = self.loss_function(output['logits'], labels)
         self.log("train_loss", loss, on_step=True, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        input_ids, attention_mask, labels = batch
+        input_ids, _, labels = batch
         output = self.forward(input_ids)
         loss = self.loss_function(output['logits'], labels)
         self.log("val_acc", self.val_acc(output['logits'], labels), on_step=True, on_epoch=True)
