@@ -1,14 +1,12 @@
-import datasets
-import json
 import os
-import pytorch_lightning as pl
-import torch
-import requests
 import warnings
-from datasets.arrow_dataset import Dataset
-from pytorch_lightning.utilities.types import EVAL_DATALOADERS, TRAIN_DATALOADERS
+from typing import Optional
+
+import torch
 from torch.utils.data import DataLoader, TensorDataset
-from typing import Any, Optional
+import pytorch_lightning as pl
+from pytorch_lightning.utilities.types import EVAL_DATALOADERS, TRAIN_DATALOADERS
+import datasets
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
@@ -17,6 +15,7 @@ class PrivateAISynthetic(pl.LightningDataModule):
     def __init__(self, data_file, text_feature_name):
         """
         Private-AI Data Module, for synthetic data generation
+
         :param tokenizer: HuggingFace tokenizer
         :param key: PAI customer Key
         :param text_features: list of text feature names in the dataset that needs a synthetic data generation
@@ -86,7 +85,6 @@ class PrivateAISynthetic(pl.LightningDataModule):
                                     lambda e: self.tokenizer(e[self.text_feature_name], truncation=self.truncation, padding=self.padding),
                                     batched=self.batched)
 
-
         if self.cache:
             self.save_cache_dataset_dir = self.save_cache_dataset_dir if self.save_cache_dataset_dir else './'
             self.train_dataset.save_to_disk(f"{self.save_cache_dataset_dir}/train_dataset")
@@ -98,6 +96,7 @@ class PrivateAISynthetic(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None) -> None:
         """
         Assigning the train/val/test/predict split
+
         :param stage: it defines which setup logic for which split needs to defined.
         """
         # self.prepare_data()
@@ -135,9 +134,9 @@ class PrivateAISynthetic(pl.LightningDataModule):
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         """
         This function creates a pytorch dataloader for training dataset with the defined batch size
+
         :return: Pytorch Dataloader
         """
-        print(self.train_dataset)
         if not self.data_synthetic:
             warnings.warn("Data is not synthetic, please call prepare_data function for synthetic data generation")
         self.train_dataset = TensorDataset(torch.tensor(self.train_dataset['input_ids'][:5]),
@@ -148,6 +147,7 @@ class PrivateAISynthetic(pl.LightningDataModule):
     def val_dataloader(self) -> EVAL_DATALOADERS:
         """
         This function creates a pytorch dataloader for validation dataset with the defined batch size
+
         :return: Pytorch Dataloader
         """
         if not self.data_synthetic:
@@ -161,6 +161,7 @@ class PrivateAISynthetic(pl.LightningDataModule):
     def test_dataloader(self) -> EVAL_DATALOADERS:
         """
         This function creates a pytorch dataloader for test dataset with the defined batch size
+
         :return: Pytorch Dataloader
         """
         if not self.data_synthetic:
@@ -174,6 +175,7 @@ class PrivateAISynthetic(pl.LightningDataModule):
     def predict_dataloader(self) -> EVAL_DATALOADERS:
         """
         This function creates a pytorch dataloader for predict dataset with the defined batch size
+
         :return: Pytorch Dataloader
         """
         if not self.data_synthetic:

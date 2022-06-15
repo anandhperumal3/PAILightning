@@ -1,6 +1,8 @@
+transformers==4.19.4
 torchvision==0.10.0
 pytorch-lightning==1.6.3
 jsonargparse[signatures]==4.7.3
+datasets==2.2.2
 wandb==0.12.16
 gradio==2.9.4
 pyyaml==5.4.0

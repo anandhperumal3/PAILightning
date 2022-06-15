@@ -1,12 +1,17 @@
 import warnings
 warnings.simplefilter("ignore")
+
 import logging
 from functools import partial
 import torch
-from subprocess import Popen
+
 from lightning.storage import Path
 from lightning.components.python import TracerPythonScript
+
+from subprocess import Popen
 logger = logging.getLogger(__name__)
+
+
 class PyTorchLightningScript(TracerPythonScript):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, raise_exception=True, **kwargs)
@@ -20,7 +25,6 @@ class PyTorchLightningScript(TracerPythonScript):
         tracer = super().configure_tracer()
 
         class CollectURL(Callback):
-
             def __init__(self, work):
                 self._work = work
 
