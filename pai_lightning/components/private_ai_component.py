@@ -1,8 +1,8 @@
 # TODO: imports for docker
-# import time
-# from subprocess import Popen
-# import json
-# import requests
+import time
+from subprocess import Popen
+import json
+import requests
 
 import lightning as L
 from lightning.storage import Drive
@@ -11,6 +11,12 @@ from datasets import load_dataset
 
 import os
 from typing import List, Union
+
+
+# class DockerBuildConfig(L.BuildConfig):
+#     def build_commands(self):
+#         return [
+#         ]
 
 
 class PrivateAISyntheticData(L.LightningWork):
@@ -45,39 +51,42 @@ class PrivateAISyntheticData(L.LightningWork):
         self.url = None
 
         # TODO: used for docker
-        # self.server_started = False
+        self.server_started = False
 
         self.drive = drive
         self.output_path = output_path
+        self.cloud_build_config = L.BuildConfig(
+            image="gcr.io/grid-backend-266721/private_ai:latest",
+        )
 
-    # def start_server(self, host, port):
-    #     # start docker
-    #     cmd = f"docker run --rm -p {port}:{port} deid:2.11full"
-    #     if not self.url:
-    #         self.url = f"http://{host}:{port}/deidentify_text"
-    #
-    #     Popen(cmd.split(" "))
-    #     time.sleep(600)
-    #
-    #     return
-    #
-    # def pai_docker_call(self, text) -> str:
-    #     """
-    #     This function makes a call to the PAI docker for the synthetic text generation.
-    #     :param text: input text
-    #     :return: synthetic text
-    #     """
-    #     payload = json.dumps({
-    #         "text": text,
-    #         "key": self.key,
-    #         "fake_entity_accuracy_mode": self.mode
-    #     })
-    #     headers = {
-    #         'Content-Type': 'application/json'
-    #     }
-    #     response = requests.request("POST", self.url, headers=headers, data=payload)
-    #     fake_text = response.json()["result_fake"]
-    #     return fake_text
+    def start_server(self, host, port):
+        # start docker
+        cmd = f"docker run --rm -p {port}:{port} gcr.io/grid-backend-266721/private_ai:latest"
+        if not self.url:
+            self.url = f"http://{host}:{port}/deidentify_text"
+
+        Popen(cmd.split(" "))
+        time.sleep(600)
+
+        return
+
+    def pai_docker_call(self, text) -> str:
+        """
+        This function makes a call to the PAI docker for the synthetic text generation.
+        :param text: input text
+        :return: synthetic text
+        """
+        payload = json.dumps({
+            "text": text,
+            "key": self.key,
+            "fake_entity_accuracy_mode": self.mode
+        })
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", self.url, headers=headers, data=payload)
+        fake_text = response.json()["result_fake"]
+        return fake_text
 
     def synthetic_text(self, example, text_feature_names: List[str]) -> object:
         """
@@ -96,9 +105,9 @@ class PrivateAISyntheticData(L.LightningWork):
         return example
 
     def run(self, input_path: str):
-        # if not self.server_started:
-        #     self.start_server(self.host, self.port)
-        #     self.server_started = True
+        if not self.server_started:
+            self.start_server(self.host, self.port)
+            self.server_started = True
 
         # Attempt to get the input file path to the local file system (if it doesn't exist already!!)
         if not os.path.exists(input_path):
