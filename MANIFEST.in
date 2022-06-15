@@ -11,7 +11,7 @@ recursive-include private_ai_synthetic_data_generator *.md
 recursive-include private_ai_synthetic_data_generator *.py
 
 # Include sample dataset
-recursive-include datasets/ *.csv
+recursive-include datasets data.csv
 
 # Include the license file
 include LICENSE
@@ -22,6 +22,9 @@ exclude *.toml
 exclude *.svg
 exclude *.yml
 exclude *.yaml
+
+# Exclude PyTorch trained bin file
+exclude *.bin
 
 # exclude tests from package
 recursive-exclude tests *

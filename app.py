@@ -6,6 +6,19 @@ from pai_lightning.components import PrivateAISyntheticData, PyTorchLightningScr
 import os
 
 
+class DatasetWork(L.LightningWork):
+    def __init__(self):
+        super().__init__(cache_calls=True)
+        self.drive = Drive('lit://private_ai_app')
+
+    def run(self, input_path: str, action="put"):
+        if (action == "put"):
+            self.drive.put(input_path)
+        else:
+            if not os.path.exists(input_path):
+                self.drive.get(input_path)
+
+
 class TrainDeploy(L.LightningFlow):
     def __init__(self, host, port):
         super().__init__()
@@ -13,10 +26,11 @@ class TrainDeploy(L.LightningFlow):
         self.output_path = "./datasets/data_output.csv"
         self.key = "INTERNAL_TESTING_UNLIMITED_REALLY"
         self.mode = "standard"
-        self.drive = Drive("lit://private_ai_app")
+        self.dataset_work = DatasetWork()
         self.private_ai_synthetic_data = PrivateAISyntheticData(key=self.key, mode=self.mode, 
                                                                 text_features="text",
-                                                                host=host, port=port, drive=self.drive,
+                                                                host=host, port=port,
+                                                                drive=self.dataset_work.drive,
                                                                 output_path=self.output_path)
 
         self.train_work = PyTorchLightningScript(
@@ -28,6 +42,7 @@ class TrainDeploy(L.LightningFlow):
         self.serve_work = TextServeGradio(cloud_compute=L.CloudCompute("cpu", 1))
 
     def run(self):
+        self.dataset_work.run(input_path=self.input_path, action="put")
         self.private_ai_synthetic_data.run(input_path=self.input_path)
 
         # 1. Run the python script that trains the model

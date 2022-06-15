@@ -95,15 +95,14 @@ class PrivateAISyntheticData(L.LightningWork):
         example["label"] = 1
         return example
 
-    def run(self, input_path: str=None):
+    def run(self, input_path: str):
         # if not self.server_started:
         #     self.start_server(self.host, self.port)
         #     self.server_started = True
 
         # Attempt to get the input file path to the local file system (if it doesn't exist already!!)
-        if input_path:
-            if not os.path.exists(input_path):
-                self.drive.get(input_path)
+        if not os.path.exists(input_path):
+            self.drive.get(input_path)
 
         synthetic_data = load_dataset('csv', data_files=input_path)
         synthetic_data = synthetic_data.map(lambda row: self.synthetic_text(row, self.text_features))

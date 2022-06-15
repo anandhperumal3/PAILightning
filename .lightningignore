@@ -369,6 +369,7 @@ cython_debug/
 *.pt
 *.pth
 *.ckpt
+*.bin
 data/
 lightning_logs/
 wandb/
