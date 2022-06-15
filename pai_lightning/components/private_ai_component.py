@@ -5,7 +5,7 @@ import json
 import requests
 
 import lightning as L
-from lightning.storage import Drive
+from lightning.app.storage import Drive
 
 from datasets import load_dataset
 
@@ -25,8 +25,6 @@ class PrivateAISyntheticData(L.LightningWork):
         key: str,
         mode: str,
         text_features: Union[List[str], str],
-        host: str,
-        port: int,
         drive: Drive,
         output_path: str
     ):
@@ -36,12 +34,16 @@ class PrivateAISyntheticData(L.LightningWork):
         :param key: PAI customer Key
         :param mode: synthetic data generation model type
         :param text_features: list/str of text feature names in the dataset that needs a synthetic data generation
-        :param host: host address (str) for the Work to be started at
-        :param port: port address (int) for the Work to be started at
+        # :param host: host address (str) for the Work to be started at
+        # :param port: port address (int) for the Work to be started at
         :param drive: a lightning.storage.Drive object, where the data exchange will take place
         :param output_path: The relative path (including filename + extension) where you want to store the synthetically generated file
         """
-        super().__init__(host=host, port=port)
+        super().__init__(
+            cloud_build_config=L.BuildConfig(
+                image="gcr.io/grid-backend-266721/private_ai:latest", 
+            )
+        )
 
         self.key = key
         self.mode = mode
@@ -51,24 +53,21 @@ class PrivateAISyntheticData(L.LightningWork):
         self.url = None
 
         # TODO: used for docker
-        self.server_started = False
+        # self.server_started = False
 
         self.drive = drive
         self.output_path = output_path
-        self.cloud_build_config = L.BuildConfig(
-            image="gcr.io/grid-backend-266721/private_ai:latest",
-        )
 
-    def start_server(self, host, port):
-        # start docker
-        cmd = f"docker run --rm -p {port}:{port} gcr.io/grid-backend-266721/private_ai:latest"
-        if not self.url:
-            self.url = f"http://{host}:{port}/deidentify_text"
-
-        Popen(cmd.split(" "))
-        time.sleep(600)
-
-        return
+    # def start_server(self):
+    #     # start docker
+    #     # cmd = f"docker run --rm -p {port}:{port} gcr.io/grid-backend-266721/private_ai:latest"
+    #     if not self.url:
+    #         self.url = f"http://{self.host}:{self.port}/deidentify_text"
+    #
+    #     Popen(cmd.split(" "))
+    #     time.sleep(600)
+    #
+    #     return
 
     def pai_docker_call(self, text) -> str:
         """
@@ -84,6 +83,7 @@ class PrivateAISyntheticData(L.LightningWork):
         headers = {
             'Content-Type': 'application/json'
         }
+        self.url = f"http://{self.host}:{self.port}/deidentify_text"
         response = requests.request("POST", self.url, headers=headers, data=payload)
         fake_text = response.json()["result_fake"]
         return fake_text
@@ -96,18 +96,19 @@ class PrivateAISyntheticData(L.LightningWork):
         :param text_feature_names: text feature name(s)
         :return: example containing the synthetic text in the text feature field
         """
-        # example[text_feature_names] = self.pai_docker_call(example[text_feature_names])
+        for text_feature_name in text_feature_names:
+            example[text_feature_name] = self.pai_docker_call(example[text_feature_name])
         # TODO: This is temporary fix, remove the line below once docker calls are tested and are working
-        for feat in text_feature_names:
-            if feat in example:
-                example[feat] = "fake"
-        example["label"] = 1
+        # for feat in text_feature_names:
+        #     if feat in example:
+        #         example[feat] = "fake"
+        # example["label"] = 1
         return example
 
     def run(self, input_path: str):
-        if not self.server_started:
-            self.start_server(self.host, self.port)
-            self.server_started = True
+        # if not self.server_started:
+        #     # self.start_server()
+        #     self.server_started = True
 
         # Attempt to get the input file path to the local file system (if it doesn't exist already!!)
         if not os.path.exists(input_path):

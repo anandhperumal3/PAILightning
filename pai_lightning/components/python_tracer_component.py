@@ -5,8 +5,8 @@ import logging
 from functools import partial
 import torch
 
-from lightning.storage import Path
-from lightning.components.python import TracerPythonScript
+from lightning.app.storage import Path
+from lightning.app.components.python import TracerPythonScript
 
 from subprocess import Popen
 logger = logging.getLogger(__name__)
