@@ -5,7 +5,7 @@
 # import requests
 
 import lightning as L
-from lightning.storage import Drive
+from lightning.app.storage import Drive
 
 from datasets import load_dataset
 
@@ -109,9 +109,5 @@ class PrivateAISyntheticData(L.LightningWork):
         synthetic_data = synthetic_data.map(lambda row: self.synthetic_text(row, self.text_features))
         synthetic_data['train'].to_csv(self.output_path)
         self.drive.put(self.output_path)
-
-        # Remove the file from the local filesystem
-        # if os.path.exists(self.output_path):
-        #     os.remove(self.output_path)
 
         return None

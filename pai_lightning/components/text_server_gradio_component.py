@@ -1,19 +1,15 @@
 import warnings
 warnings.simplefilter("ignore")
-import logging
-from functools import partial
-import torch
-from subprocess import Popen
-from lightning.storage import Path
-from lightning.components.python import TracerPythonScript
-from lightning.components.serve import ServeGradio
-from transformers import AutoTokenizer
-from torch.nn import Softmax
+
 import json
 import requests
+
+import torch
+from transformers import AutoTokenizer
+from torch.nn import Softmax
 import gradio as gr
 
-logger = logging.getLogger(__name__)
+from lightning.app.components.serve import ServeGradio
 
 
 class TextServeGradio(ServeGradio):
@@ -35,7 +31,6 @@ class TextServeGradio(ServeGradio):
         self.best_model_path = best_model_path
         self.pai_host = pai_host
         self.pai_port = pai_port
-        print(self._host, self.port, self.host, self.pai_port, self.pai_host)
         super().run()
 
     def request_call(self, text):
@@ -60,7 +55,6 @@ class TextServeGradio(ServeGradio):
         prediction = self.model(tokenized_txt)
         softmax = Softmax(dim=1)
         predicted_score = softmax(prediction['logits']).tolist()[0]
-        print(predicted_score)
         return {self._labels[i]: predicted_score[i] for i in range(len(predicted_score))}
 
     def build_model(self):

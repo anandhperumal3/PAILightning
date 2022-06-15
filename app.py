@@ -1,7 +1,7 @@
 import lightning as L
-from lightning.storage import Drive
+from lightning.app.storage import Drive
 
-from components import PrivateAISyntheticData, PyTorchLightningScript, TextServeGradio
+from pai_lightning.components import PrivateAISyntheticData, PyTorchLightningScript, TextServeGradio
 
 import os
 
@@ -20,7 +20,7 @@ class TrainDeploy(L.LightningFlow):
                                                                 output_path=self.output_path)
 
         self.train_work = PyTorchLightningScript(
-            script_path=os.path.join(os.path.dirname(__file__), "./train_script.py"),
+            script_path=os.path.join(os.path.dirname(__file__), "./pai_lightning/scripts/train_script.py"),
             script_args=["--trainer.max_epochs=1", f"--data.data_file={self.private_ai_synthetic_data.output_path}",
                          "--data.text_feature=text"],
         )

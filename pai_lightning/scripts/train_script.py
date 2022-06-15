@@ -4,7 +4,7 @@ from pytorch_lightning.utilities.cli import LightningCLI
 from torchmetrics import Accuracy
 import torch
 
-from pai_datamodule import PrivateAISynthetic
+from pai_lightning.pai_datamodule import PrivateAISynthetic
 
 
 class SequenceClassification(LightningModule):
