@@ -13,10 +13,16 @@ import os
 from typing import List, Union
 
 
-# class DockerBuildConfig(L.BuildConfig):
-#     def build_commands(self):
-#         return [
-#         ]
+class DockerBuildConfig(L.BuildConfig):
+    def __init__(self):
+        super().__init__(
+            image="gcr.io/grid-backend-266721/deid:2.11full",
+        )
+
+    def build_commands(self):
+        return [
+            "sudo apt-get install docker docker.io",
+        ]
 
 
 class PrivateAISyntheticData(L.LightningWork):
@@ -34,15 +40,11 @@ class PrivateAISyntheticData(L.LightningWork):
         :param key: PAI customer Key
         :param mode: synthetic data generation model type
         :param text_features: list/str of text feature names in the dataset that needs a synthetic data generation
-        # :param host: host address (str) for the Work to be started at
-        # :param port: port address (int) for the Work to be started at
         :param drive: a lightning.storage.Drive object, where the data exchange will take place
         :param output_path: The relative path (including filename + extension) where you want to store the synthetically generated file
         """
         super().__init__(
-            cloud_build_config=L.BuildConfig(
-                image="gcr.io/grid-backend-266721/private_ai:latest", 
-            )
+            cloud_build_config=DockerBuildConfig()
         )
 
         self.key = key
@@ -50,24 +52,21 @@ class PrivateAISyntheticData(L.LightningWork):
         if isinstance(text_features, str):
             text_features = [text_features]
         self.text_features = text_features
-        self.url = None
+        self.url_addr = None
 
         # TODO: used for docker
-        # self.server_started = False
-
+        self.server_started = False
         self.drive = drive
         self.output_path = output_path
 
-    # def start_server(self):
-    #     # start docker
-    #     # cmd = f"docker run --rm -p {port}:{port} gcr.io/grid-backend-266721/private_ai:latest"
-    #     if not self.url:
-    #         self.url = f"http://{self.host}:{self.port}/deidentify_text"
-    #
-    #     Popen(cmd.split(" "))
-    #     time.sleep(600)
-    #
-    #     return
+    def start_server(self):
+        # start docker
+        cmd = "docker run --rm -p 8080:8080 gcr.io/grid-backend-266721/deid:2.11full"
+        if not self.url_addr:
+            self.url_addr = f"http://localhost:8080/deidentify_text"
+
+        Popen(cmd.split(" "))
+        time.sleep(10)
 
     def pai_docker_call(self, text) -> str:
         """
@@ -83,8 +82,7 @@ class PrivateAISyntheticData(L.LightningWork):
         headers = {
             'Content-Type': 'application/json'
         }
-        self.url = f"http://{self.host}:{self.port}/deidentify_text"
-        response = requests.request("POST", self.url, headers=headers, data=payload)
+        response = requests.request("POST", self.url_addr, headers=headers, data=payload)
         fake_text = response.json()["result_fake"]
         return fake_text
 
@@ -102,19 +100,20 @@ class PrivateAISyntheticData(L.LightningWork):
         # for feat in text_feature_names:
         #     if feat in example:
         #         example[feat] = "fake"
-        # example["label"] = 1
+        example["label"] = 1
         return example
 
     def run(self, input_path: str):
-        # if not self.server_started:
-        #     # self.start_server()
-        #     self.server_started = True
+        if not self.server_started:
+            self.start_server()
+            self.server_started = True
 
         # Attempt to get the input file path to the local file system (if it doesn't exist already!!)
         if not os.path.exists(input_path):
             self.drive.get(input_path)
 
-        synthetic_data = load_dataset('csv', data_files=input_path)
-        synthetic_data = synthetic_data.map(lambda row: self.synthetic_text(row, self.text_features))
-        synthetic_data['train'].to_csv(self.output_path)
-        self.drive.put(self.output_path)
+        if self.server_started:
+            synthetic_data = load_dataset('csv', data_files=input_path)
+            synthetic_data = synthetic_data.map(lambda row: self.synthetic_text(row, self.text_features))
+            synthetic_data['train'].to_csv(self.output_path)
+            self.drive.put(self.output_path)

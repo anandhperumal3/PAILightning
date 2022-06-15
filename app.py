@@ -27,7 +27,7 @@ class TrainDeploy(L.LightningFlow):
         self.key = "INTERNAL_TESTING_UNLIMITED_REALLY"
         self.mode = "standard"
         self.dataset_work = DatasetWork()
-        self.private_ai_synthetic_data = PrivateAISyntheticData(key=self.key, mode=self.mode, 
+        self.private_ai_synthetic_data = PrivateAISyntheticData(key=self.key, mode=self.mode,
                                                                 text_features="text",
                                                                 drive=self.dataset_work.drive,
                                                                 output_path=self.output_path)
@@ -43,8 +43,8 @@ class TrainDeploy(L.LightningFlow):
     def run(self):
         self.dataset_work.run(input_path=self.input_path, action="put")
         self.private_ai_synthetic_data.run(input_path=self.input_path)
-        pai_host = self.private_ai_synthetic_data.host
-        pai_port = self.private_ai_synthetic_data.port
+        pai_host = "localhost" 
+        pai_port = "8080"
 
         # 1. Run the python script that trains the model
         self.train_work.run()
