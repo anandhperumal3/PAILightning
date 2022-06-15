@@ -1,5 +1,5 @@
 import lightning as L
-from lightning.app.storage import Drive
+from lightning.storage import Drive
 
 from pai_lightning.components import PrivateAISyntheticData, PyTorchLightningScript, TextServeGradio
 

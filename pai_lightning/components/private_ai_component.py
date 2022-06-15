@@ -5,7 +5,7 @@
 # import requests
 
 import lightning as L
-from lightning.app.storage import Drive
+from lightning.storage import Drive
 
 from datasets import load_dataset
 
@@ -32,7 +32,7 @@ class PrivateAISyntheticData(L.LightningWork):
         :param text_features: list/str of text feature names in the dataset that needs a synthetic data generation
         :param host: host address (str) for the Work to be started at
         :param port: port address (int) for the Work to be started at
-        :param drive: a lightning_app.storage.drive.Drive object, where the data exchange will take place
+        :param drive: a lightning.storage.Drive object, where the data exchange will take place
         :param output_path: The relative path (including filename + extension) where you want to store the synthetically generated file
         """
         super().__init__(host=host, port=port)
@@ -109,5 +109,3 @@ class PrivateAISyntheticData(L.LightningWork):
         synthetic_data = synthetic_data.map(lambda row: self.synthetic_text(row, self.text_features))
         synthetic_data['train'].to_csv(self.output_path)
         self.drive.put(self.output_path)
-
-        return None
