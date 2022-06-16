@@ -9,7 +9,7 @@ from transformers import AutoTokenizer
 from torch.nn import Softmax
 import gradio as gr
 
-from lightning.components.serve import ServeGradio
+from lightning.app.components.serve import ServeGradio
 
 
 class TextServeGradio(ServeGradio):
